@@ -53,6 +53,8 @@ def download_media(tg, bId, media):
 
 def upload_media(nodeId, download):
     megaUsr.upload(download, nodeId)
+    
+    os.remove(download)
     return os.path.split(download)[-1]
 
 def sync_channel(tg, cId, bChan):
@@ -70,17 +72,22 @@ def sync_channel(tg, cId, bChan):
         
         for msg in msgs:
             if not msg.media: continue
+            
+            media = None
             if msg.photo: media = msg.photo
             if msg.video: media = msg.video
             if msg.document: media = msg.document
             
+            # 64 MB file limit
+            if media.file_size > 64*1024*1024: continue
+            
             mediaId = media.file_id
             cur = db.cursor()
             cur.execute("""SELECT COUNT(file_name) FROM mega_files
-                WHERE file_id=?;""", (mediaId,)
-            )
-            
-            print(cur.fetchone())
+                WHERE file_id=?;""", (mediaId,))
+            if cur.fetchone()[0] == 0:
+                download = download_media(tg, bId, media)
+                medias.append(download)
         
         with Pool(processes = poolSize) as pool:
             fileNames = pool.starmap(upload_media, [

@@ -91,16 +91,17 @@ def sync_channel(tg, cId, bChan):
                     medias.append(download)
             except Exception as e:
                 print("message_id %d: %s" % (msg.message_id, str(e)))
-        
-        with Pool(processes = poolSize) as pool:
-            fileNames = pool.starmap(upload_media, [
-                (nodeId, m) for m in medias
-            ])
-            print("\n".join(fileNames))
-            
-            pool.close()
-            pool.join()
-        
+        try:
+            with Pool(processes = poolSize) as pool:
+                fileNames = pool.starmap(upload_media, [
+                    (nodeId, m) for m in medias
+                ])
+                print("\n".join(fileNames))
+                
+                pool.close()
+                pool.join()
+        except Exception as e:
+            print("pool exception: %s" % (str(e)))
         msgOffset += len(msgs)
 
 if __name__ == "__main__":

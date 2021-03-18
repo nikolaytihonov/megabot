@@ -71,23 +71,26 @@ def sync_channel(tg, cId, bChan):
         medias = []
         
         for msg in msgs:
-            if not msg.media: continue
-            
-            media = None
-            if msg.photo: media = msg.photo
-            if msg.video: media = msg.video
-            if msg.document: media = msg.document
-            
-            # 64 MB file limit
-            if media.file_size > 64*1024*1024: continue
-            
-            mediaId = media.file_id
-            cur = db.cursor()
-            cur.execute("""SELECT * FROM mega_files
-                WHERE file_id=?;""", (mediaId,))
-            if len(list(cur.fetchall())) == 0:
-                download = download_media(tg, bId, media)
-                medias.append(download)
+            try:
+                if not msg.media: continue
+                
+                media = None
+                if msg.photo: media = msg.photo
+                if msg.video: media = msg.video
+                if msg.document: media = msg.document
+                
+                # 64 MB file limit
+                if media.file_size > 64*1024*1024: continue
+                
+                mediaId = media.file_id
+                cur = db.cursor()
+                cur.execute("""SELECT * FROM mega_files
+                    WHERE file_id=?;""", (mediaId,))
+                if len(list(cur.fetchall())) == 0:
+                    download = download_media(tg, bId, media)
+                    medias.append(download)
+            except Exception as e:
+                print("message_id %d: %s" % (msg.message_id, str(e)))
         
         with Pool(processes = poolSize) as pool:
             fileNames = pool.starmap(upload_media, [

@@ -46,8 +46,8 @@ def download_media(tg, bId, media):
         print("failed to sync media %s: %s" % (mediaId, str(e)))
     
     db.execute("INSERT INTO mega_files VALUES (?,?,?);",
-        (mediaId, os.path.split(download)[-1], bId)
-    )
+        (mediaId, os.path.split(download)[-1], bId))
+    db.commit()
     
     return download
 
@@ -83,9 +83,9 @@ def sync_channel(tg, cId, bChan):
             
             mediaId = media.file_id
             cur = db.cursor()
-            cur.execute("""SELECT COUNT(file_name) FROM mega_files
+            cur.execute("""SELECT * FROM mega_files
                 WHERE file_id=?;""", (mediaId,))
-            if cur.fetchone()[0] == 0:
+            if len(list(cur.fetchall())) == 0:
                 download = download_media(tg, bId, media)
                 medias.append(download)
         
@@ -98,7 +98,6 @@ def sync_channel(tg, cId, bChan):
             pool.close()
             pool.join()
         
-        db.commit()
         msgOffset += len(msgs)
 
 if __name__ == "__main__":
